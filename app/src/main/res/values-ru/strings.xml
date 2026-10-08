@@ -2874,4 +2874,17 @@
     <string name="settings_drivers_routed">Драйвер распознан и установлен для %1$s.</string>
     <string name="linux_child_processes_message">Android ограничивает число фоновых процессов приложения, а сеанс Linux запускает их гораздо больше: Steam или игру может закрыть прямо во время игры. Включите «Отключить ограничения дочерних процессов» в параметрах разработчика. Открыть?</string>
     <string name="linux_child_processes_adb">Android ограничивает число фоновых процессов приложения, а сеанс Linux запускает их гораздо больше: Steam или игру может закрыть прямо во время игры. В этой версии Android такой настройки нет. На компьютере выполните:\n\nadb shell settings put global settings_enable_monitor_phantom_procs false</string>
+    <string name="ue5_tweaks_title">Unreal Engine 5</string>
+    <string name="ue5_tweaks_enable">Оптимизации UE5</string>
+    <string name="ue5_tweaks_detected_hint">Похоже, это игра на Unreal Engine. Оптимизации ниже могут удешевить Lumen и Nanite или обойти проблемы с их отрисовкой.</string>
+    <string name="ue5_tweaks_preset">Пресет</string>
+    <string name="ue5_preset_light">Лёгкий: Lumen без SDF мешей, без виртуальных теней</string>
+    <string name="ue5_preset_balanced">Сбалансированный: грубее Lumen, отражения SSR, грубее Nanite</string>
+    <string name="ue5_preset_performance" formatted="false">Производительность: без динамического GI, разрешение 60%</string>
+    <string name="ue5_preset_compat">Совместимость: если Lumen/Nanite рисуются неверно или не видны</string>
+    <string name="ue5_preset_no_nanite">Совместимость без Nanite</string>
+    <string name="ue5_tweaks_project">Имя проекта UE (пусто = определить автоматически)</string>
+    <string name="ue5_tweaks_custom_cvars">Доп. cvar\'ы, например r.ScreenPercentage=50, r.Nanite=0</string>
+    <string name="ue5_tweaks_use_args">Также передавать аргументами запуска (-dpcvars)</string>
+    <string name="ue5_tweaks_footer">Перед запуском записывается в Engine.ini игры в контейнере и удаляется при выключении. Копия исходного файла сохраняется (.wnbak). Подробности: drive_c/WinNative/ue5-tweaks/last.log</string>
 </resources>
