@@ -627,6 +627,16 @@ class GameSettingsStateHolder {
     val execArgs = mutableStateOf("")
     val fullscreenStretched = mutableStateOf(false)
 
+    // Advanced - Unreal Engine 5 (shortcut only)
+    val ue5Enabled = mutableStateOf(false)
+    val ue5SelectedPreset = mutableIntStateOf(
+        com.winlator.cmod.runtime.compat.ue.Ue5Preset.DEFAULT.ordinal
+    )
+    val ue5Project = mutableStateOf("")
+    val ue5CustomCvars = mutableStateOf("")
+    val ue5UseArgs = mutableStateOf(true)
+    val ue5Detected = mutableStateOf(false)
+
     // Advanced - CPU
     val cpuCount = mutableIntStateOf(Runtime.getRuntime().availableProcessors())
     val cpuChecked = mutableStateOf<List<Boolean>>(
@@ -5639,6 +5649,11 @@ private fun AdvancedSection(
 
     Spacer(Modifier.height(SettingSectionGap))
 
+    if (!state.isContainerEditMode.value) {
+        Ue5TweaksGroup(state)
+        Spacer(Modifier.height(SettingSectionGap))
+    }
+
     SubsectionLabel(stringResource(R.string.container_config_processor_affinity))
     Spacer(Modifier.height(8.dp))
     SettingGroup {
@@ -5693,6 +5708,74 @@ private fun AdvancedSection(
                     }
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun Ue5TweaksGroup(state: GameSettingsStateHolder) {
+    SubsectionLabel(stringResource(R.string.ue5_tweaks_title))
+    Spacer(Modifier.height(8.dp))
+    SettingGroup {
+        if (state.ue5Detected.value && !state.ue5Enabled.value) {
+            Text(
+                text = stringResource(R.string.ue5_tweaks_detected_hint),
+                color = TextSecondary,
+                fontSize = 12.sp
+            )
+            Spacer(Modifier.height(SettingItemGap))
+        }
+
+        SettingCheckbox(
+            label = stringResource(R.string.ue5_tweaks_enable),
+            checked = state.ue5Enabled.value,
+            onCheckedChange = { state.ue5Enabled.value = it }
+        )
+
+        if (state.ue5Enabled.value) {
+            Spacer(Modifier.height(SettingItemGap))
+            val presetLabels = listOf(
+                stringResource(R.string.ue5_preset_light),
+                stringResource(R.string.ue5_preset_balanced),
+                stringResource(R.string.ue5_preset_performance),
+                stringResource(R.string.ue5_preset_compat),
+                stringResource(R.string.ue5_preset_no_nanite)
+            )
+            // Labels above must stay in Ue5Preset declaration order.
+            SettingDropdown(
+                label = stringResource(R.string.ue5_tweaks_preset),
+                entries = presetLabels.take(com.winlator.cmod.runtime.compat.ue.Ue5Preset.entries.size),
+                selectedIndex = state.ue5SelectedPreset.intValue,
+                onSelected = { state.ue5SelectedPreset.intValue = it }
+            )
+
+            Spacer(Modifier.height(SettingItemGap))
+            SettingTextField(
+                label = stringResource(R.string.ue5_tweaks_project),
+                value = state.ue5Project.value,
+                onValueChange = { state.ue5Project.value = it }
+            )
+
+            Spacer(Modifier.height(SettingItemGap))
+            SettingTextField(
+                label = stringResource(R.string.ue5_tweaks_custom_cvars),
+                value = state.ue5CustomCvars.value,
+                onValueChange = { state.ue5CustomCvars.value = it }
+            )
+
+            Spacer(Modifier.height(SettingItemGap))
+            SettingCheckbox(
+                label = stringResource(R.string.ue5_tweaks_use_args),
+                checked = state.ue5UseArgs.value,
+                onCheckedChange = { state.ue5UseArgs.value = it }
+            )
+
+            Spacer(Modifier.height(SettingItemGap))
+            Text(
+                text = stringResource(R.string.ue5_tweaks_footer),
+                color = TextSecondary,
+                fontSize = 12.sp
+            )
         }
     }
 }

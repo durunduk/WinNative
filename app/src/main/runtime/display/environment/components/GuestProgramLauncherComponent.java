@@ -306,6 +306,10 @@ public class GuestProgramLauncherComponent extends EnvironmentComponent {
     this.workingDir = workingDir;
   }
 
+  public File getWorkingDir() {
+    return workingDir;
+  }
+
   public void setWineInfo(WineInfo wineInfo) {
     this.wineInfo = wineInfo;
   }

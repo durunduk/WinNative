@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "experimental" flavor: own package name, no benchmark/game-booster spoofing.
+  The label comes from a non-localised resValue so the launcher always shows
+  "WinNative Exp" and the build is easy to tell apart from the official app.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:label="@string/flavor_app_label"
+        tools:replace="android:label" />
+</manifest>

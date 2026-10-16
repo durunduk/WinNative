@@ -2984,4 +2984,17 @@ Installed path:
     <string name="settings_drivers_routed">Driver identified and installed for %1$s.</string>
     <string name="linux_child_processes_message">Android limits how many background processes an app may have, and a Linux session runs far more than that: Steam or a game can be killed while you play. Turn on “Disable child process restrictions” in Developer options. Open it now?</string>
     <string name="linux_child_processes_adb">Android limits how many background processes an app may have, and a Linux session runs far more than that: Steam or a game can be killed while you play. This version of Android has no switch for it. From a computer, run:\n\nadb shell settings put global settings_enable_monitor_phantom_procs false</string>
+    <string name="ue5_tweaks_title">Unreal Engine 5</string>
+    <string name="ue5_tweaks_enable">UE5 performance tweaks</string>
+    <string name="ue5_tweaks_detected_hint">This looks like an Unreal Engine game. The tweaks below can make Lumen and Nanite cheaper or work around rendering problems.</string>
+    <string name="ue5_tweaks_preset">Preset</string>
+    <string name="ue5_preset_light">Light: Lumen without mesh SDFs, no virtual shadow maps</string>
+    <string name="ue5_preset_balanced">Balanced: coarser Lumen, SSR reflections, coarser Nanite</string>
+    <string name="ue5_preset_performance" formatted="false">Performance: no dynamic GI, 60% resolution</string>
+    <string name="ue5_preset_compat">Compatibility: for broken or missing Lumen/Nanite</string>
+    <string name="ue5_preset_no_nanite">Compatibility without Nanite</string>
+    <string name="ue5_tweaks_project">UE project name (empty = detect automatically)</string>
+    <string name="ue5_tweaks_custom_cvars">Extra cvars, e.g. r.ScreenPercentage=50, r.Nanite=0</string>
+    <string name="ue5_tweaks_use_args">Also pass as launch arguments (-dpcvars)</string>
+    <string name="ue5_tweaks_footer">Written to the game\'s Engine.ini in the container before launch and removed when turned off. A backup (.wnbak) of the original file is kept. Details: drive_c/WinNative/ue5-tweaks/last.log</string>
 </resources>

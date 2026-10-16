@@ -8201,7 +8201,18 @@ public class XServerDisplayActivity extends FixedFontScaleAppCompatActivity
 
                 String wineStartCmd = getWineStartCommand(guestProgramLauncherComponent);
                 String guestExecutable;
-            
+
+                // UE5 tweaks: the working dir resolved above points at the game, which is
+                // what project detection needs. Also cleans up when the option is off.
+                if (shortcut != null) {
+                    java.io.File ue5GameDir = guestProgramLauncherComponent.getWorkingDir();
+                    if (ue5GameDir == null) {
+                        String installPath = shortcut.getExtra("game_install_path");
+                        if (!installPath.isEmpty()) ue5GameDir = new java.io.File(installPath);
+                    }
+                    com.winlator.cmod.runtime.compat.ue.Ue5Tweaks.applyForLaunch(container, shortcut, ue5GameDir);
+                }
+
             // Launcher resolves Wine vs ARM64EC execution internally.
             guestExecutable = "wine explorer /desktop=shell," + xServer.screenInfo + " " + wineStartCmd;
 
@@ -11600,6 +11611,14 @@ public class XServerDisplayActivity extends FixedFontScaleAppCompatActivity
             } else {
                 args = "\"wfm.exe\"";
             }
+        }
+
+        // UE5 tweaks via -dpcvars. Skipped for the ColdClient loader, which does not
+        // forward its own arguments to the game, and for the file manager fallback.
+        if (shortcut != null && (bootExePath == null || bootExePath.isEmpty())
+                && !args.isEmpty() && !args.startsWith("explorer")
+                && !args.contains("steamclient_loader") && !args.contains("wfm.exe")) {
+            args += com.winlator.cmod.runtime.compat.ue.Ue5Tweaks.commandLineArgs(shortcut);
         }
 
         if (!args.isEmpty() && !args.startsWith("winhandler.exe") && !args.startsWith("explorer")) {

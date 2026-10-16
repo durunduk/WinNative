@@ -42,6 +42,10 @@ jobs:
             artifactName: apk-antutu
             gradleTask: assembleAntutuDebug
             apkPath: app/build/outputs/apk/antutu/debug/antutu.apk
+          - name: Experimental
+            artifactName: apk-experimental
+            gradleTask: assembleExperimentalDebug
+            apkPath: app/build/outputs/apk/experimental/debug/experimental.apk
 
     steps:
     - name: Clone repository

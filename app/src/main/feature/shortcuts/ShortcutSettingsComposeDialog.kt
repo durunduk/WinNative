@@ -78,6 +78,11 @@ import com.winlator.cmod.shared.android.ImageUtils
 import com.winlator.cmod.shared.io.AssetPaths
 import com.winlator.cmod.runtime.wine.EnvVars
 import com.winlator.cmod.runtime.wine.WineUtils
+import com.winlator.cmod.runtime.compat.SteamBridge
+import com.winlator.cmod.runtime.compat.ue.Ue5Ini
+import com.winlator.cmod.runtime.compat.ue.Ue5Preset
+import com.winlator.cmod.runtime.compat.ue.Ue5Tweaks
+import com.winlator.cmod.runtime.display.environment.ImageFs
 import com.winlator.cmod.shared.io.FileUtils
 import com.winlator.cmod.shared.util.KeyValueSet
 import com.winlator.cmod.shared.android.RefreshRateUtils
@@ -455,6 +460,15 @@ class ShortcutSettingsComposeDialog private constructor(
 
         // Advanced - System
         state.execArgs.value = shortcut.getExtra("execArgs", "")
+
+        // Advanced - Unreal Engine 5 (shortcut-only, never inherited from the container)
+        state.ue5Enabled.value = shortcut.getExtra(Ue5Tweaks.EXTRA_ENABLED, "0") == "1"
+        state.ue5SelectedPreset.intValue =
+            Ue5Preset.fromId(shortcut.getExtra(Ue5Tweaks.EXTRA_PRESET, Ue5Preset.DEFAULT.id)).ordinal
+        state.ue5Project.value = shortcut.getExtra(Ue5Tweaks.EXTRA_PROJECT, "")
+        state.ue5CustomCvars.value = shortcut.getExtra(Ue5Tweaks.EXTRA_CUSTOM_CVARS, "")
+        state.ue5UseArgs.value = shortcut.getExtra(Ue5Tweaks.EXTRA_USE_ARGS, "1") == "1"
+        state.ue5Detected.value = detectUe5Game(shortcut)
         val fullscreenStretched = getShortcutSetting(
             "fullscreenStretched",
             if (container.isFullscreenStretched) "1" else "0"
@@ -1413,6 +1427,25 @@ class ShortcutSettingsComposeDialog private constructor(
                 "execArgs", execArgs, container.getExecArgs()
             )
 
+            // Unreal Engine 5 tweaks. Shortcut extras are one line each, so custom
+            // cvars are normalised to a comma-separated list. Defaults are stored as
+            // null to keep shortcuts that never used this feature unchanged.
+            shortcut.putExtra(Ue5Tweaks.EXTRA_ENABLED, if (state.ue5Enabled.value) "1" else null)
+            val ue5Preset = Ue5Preset.entries
+                .getOrElse(state.ue5SelectedPreset.intValue) { Ue5Preset.DEFAULT }
+            shortcut.putExtra(
+                Ue5Tweaks.EXTRA_PRESET,
+                if (ue5Preset == Ue5Preset.DEFAULT) null else ue5Preset.id
+            )
+            shortcut.putExtra(
+                Ue5Tweaks.EXTRA_PROJECT,
+                state.ue5Project.value.trim().ifEmpty { null }
+            )
+            val ue5Custom = Ue5Preset.parseCustom(state.ue5CustomCvars.value)
+                .entries.joinToString(",") { "${it.key}=${it.value}" }
+            shortcut.putExtra(Ue5Tweaks.EXTRA_CUSTOM_CVARS, ue5Custom.ifEmpty { null })
+            shortcut.putExtra(Ue5Tweaks.EXTRA_USE_ARGS, if (state.ue5UseArgs.value) null else "0")
+
             // Refresh rate
             val refreshRateEntries = state.refreshRateEntries.value
             val refreshIdx = state.selectedRefreshRate.intValue
@@ -2000,6 +2033,28 @@ class ShortcutSettingsComposeDialog private constructor(
 
     private fun getShortcutSetting(key: String, containerValue: String): String {
         return shortcut.getSettingExtra(key, containerValue)
+    }
+
+    /** Best-effort check used only to hint the user; launch-time detection is authoritative. */
+    private fun detectUe5Game(shortcut: Shortcut): Boolean = try {
+        val candidates = ArrayList<java.io.File>()
+        shortcut.getExtra("game_install_path").takeIf { it.isNotEmpty() }
+            ?.let { candidates += java.io.File(it) }
+        if (shortcut.getExtra("game_source") == "STEAM") {
+            shortcut.getExtra("app_id").toIntOrNull()
+                ?.let { SteamBridge.getAppDirPath(it) }
+                ?.takeIf { it.isNotEmpty() }
+                ?.let { candidates += java.io.File(it) }
+        }
+        val winPath = shortcut.path
+        if (!winPath.isNullOrEmpty() && winPath.contains("\\")) {
+            WineUtils.getNativePath(
+                shortcut.container, ImageFs.find(activity), winPath.substringBeforeLast("\\")
+            )?.let { candidates += it }
+        }
+        candidates.any { Ue5Ini.looksLikeUnrealGame(it) }
+    } catch (e: Exception) {
+        false
     }
 
     private fun seedAudioDriver(container: Container, resolved: String, wineVersion: String) {

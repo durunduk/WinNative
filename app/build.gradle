@@ -61,6 +61,33 @@ task checkSubmodules {
 
 preBuild.dependsOn(checkSubmodules)
 
+// Without `git lfs pull` the bundled system files are 130-byte LFS pointer
+// stubs. The build still succeeds, but the app then fails with "Unable to
+// install system files" on first start. Fail here with a clear message instead.
+task checkLfsAssets {
+    def assetsPath = file("src/main/assets").absolutePath
+
+    doFirst {
+        def assetsDir = new File(assetsPath)
+        def stubs = (assetsDir.listFiles() ?: new File[0]).findAll { f ->
+            if (!f.isFile() || f.length() > 1024) return false
+            if (!(f.name.endsWith(".tzst") || f.name.endsWith(".txz"))) return false
+            f.withInputStream { input ->
+                byte[] head = new byte[40]
+                int n = input.read(head)
+                n > 0 && new String(head, 0, n, "UTF-8").startsWith("version https://git-lfs")
+            }
+        }
+        if (!stubs.isEmpty()) {
+            throw new GradleException(
+                "Git LFS files are not downloaded (" + stubs.collect { it.name }.join(", ") + "). " +
+                "Run 'git lfs install && git lfs pull' in the repository root, then build again.")
+        }
+    }
+}
+
+preBuild.dependsOn(checkLfsAssets)
+
 tasks.named('preBuild') {
     dependsOn 'collectLogTags'
 }
@@ -294,6 +321,13 @@ android {
             dimension "branding"
             applicationId "com.antutu.ABenchMark"
             versionCode brandedVersionCode
+        }
+        // Personal test build: own package (installs next to the official app),
+        // no benchmark/game-booster spoofing, never matched by the in-app updater.
+        experimental {
+            dimension "branding"
+            applicationId "com.winnative.cmod.experimental"
+            resValue "string", "flavor_app_label", "WinNative Exp"
         }
     }
 
