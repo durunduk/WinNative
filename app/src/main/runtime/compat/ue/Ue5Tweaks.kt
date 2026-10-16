@@ -23,6 +23,7 @@ object Ue5Tweaks {
     const val EXTRA_PROJECT = "ue5Project"
     const val EXTRA_CUSTOM_CVARS = "ue5CustomCvars"
     const val EXTRA_USE_ARGS = "ue5UseArgs"
+    const val EXTRA_LOCK_INI = "ue5LockIni"
 
     private const val STATE_DIR = ".wine/drive_c/WinNative/ue5-tweaks"
 
@@ -72,22 +73,29 @@ object Ue5Tweaks {
             }
 
             val userDir = File(container.getRootDir(), ".wine/drive_c/users/" + ImageFs.USER)
+            // The marker remembers which cvars we wrote, so they can be removed even
+            // if the game rewrites Engine.ini and drops our comment markers.
             val marker = File(stateDir, sanitize(project) + ".applied")
             val cvars = if (enabled) resolveCvars(shortcut) else emptyMap()
             if (!enabled && !marker.exists()) return
+            val previous = readMarker(marker)
+            val lockIni = enabled && shortcut.getExtra(EXTRA_LOCK_INI, "0") == "1"
 
             val changed = ArrayList<String>()
             for (dir in Ue5Ini.configDirCandidates(userDir, project)) {
                 val ini = File(dir, "Engine.ini")
-                if (Ue5Ini.applyToFile(ini, cvars)) changed += ini.path.removePrefix(container.getRootDir().path)
+                if (Ue5Ini.applyToFile(ini, cvars, previous, lockIni)) {
+                    changed += ini.path.removePrefix(container.getRootDir().path)
+                }
             }
 
             if (enabled) {
                 stateDir.mkdirs()
-                marker.writeText(project)
+                marker.writeText(cvars.entries.joinToString("\n") { "${it.key}=${it.value}" } + "\n")
                 writeLog(
                     stateDir,
-                    "project=$project preset=${shortcut.getExtra(EXTRA_PRESET, Ue5Preset.DEFAULT.id)}\n" +
+                    "project=$project preset=${shortcut.getExtra(EXTRA_PRESET, Ue5Preset.DEFAULT.id)}" +
+                        " readOnly=$lockIni\n" +
                         cvars.entries.joinToString("\n") { "${it.key}=${it.value}" } +
                         "\nupdated: " + (if (changed.isEmpty()) "(already up to date)" else changed.joinToString()),
                 )
@@ -102,6 +110,19 @@ object Ue5Tweaks {
     }
 
     private fun sanitize(name: String): String = name.replace(Regex("[^A-Za-z0-9._-]"), "_")
+
+    /** Older builds stored only the project name in the marker; that yields an empty map. */
+    private fun readMarker(marker: File): Map<String, String> {
+        if (!marker.isFile) return emptyMap()
+        return try {
+            marker.readLines().mapNotNull { line ->
+                val eq = line.indexOf('=')
+                if (eq > 0) line.substring(0, eq).trim() to line.substring(eq + 1).trim() else null
+            }.toMap()
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
 
     private fun writeLog(stateDir: File, text: String) {
         try {

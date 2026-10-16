@@ -635,6 +635,7 @@ class GameSettingsStateHolder {
     val ue5Project = mutableStateOf("")
     val ue5CustomCvars = mutableStateOf("")
     val ue5UseArgs = mutableStateOf(true)
+    val ue5LockIni = mutableStateOf(false)
     val ue5Detected = mutableStateOf(false)
 
     // Advanced - CPU
@@ -5768,6 +5769,13 @@ private fun Ue5TweaksGroup(state: GameSettingsStateHolder) {
                 label = stringResource(R.string.ue5_tweaks_use_args),
                 checked = state.ue5UseArgs.value,
                 onCheckedChange = { state.ue5UseArgs.value = it }
+            )
+
+            Spacer(Modifier.height(SettingItemGap))
+            SettingCheckbox(
+                label = stringResource(R.string.ue5_tweaks_lock_ini),
+                checked = state.ue5LockIni.value,
+                onCheckedChange = { state.ue5LockIni.value = it }
             )
 
             Spacer(Modifier.height(SettingItemGap))

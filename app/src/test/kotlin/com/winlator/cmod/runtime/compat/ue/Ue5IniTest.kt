@@ -61,6 +61,53 @@ class Ue5IniTest {
         dir.deleteRecursively()
     }
 
+    @Test fun removesOurValuesWhenGameDroppedTheMarkers() {
+        // UE rewrote the file: comments gone, our lines left behind, plus the game's own.
+        val rewritten = "[SystemSettings]\nr.Foo=1\nr.Lumen.TraceMeshSDFs=0\nr.ScreenPercentage=75\n"
+        assertEquals("[SystemSettings]\nr.Foo=1\n", Ue5Ini.removeManagedBlock(rewritten, cvars))
+        // A value the game changed afterwards is the game's, not ours: keep it.
+        val changedByGame = "[SystemSettings]\nr.ScreenPercentage=100\n"
+        assertEquals(changedByGame, Ue5Ini.removeManagedBlock(changedByGame, cvars))
+        // Re-applying does not duplicate keys.
+        val reapplied = Ue5Ini.applyManagedBlock(rewritten, cvars, cvars)
+        assertEquals(1, Regex("r\\.ScreenPercentage=").findAll(reapplied).count())
+    }
+
+    @Test fun neverRemovesValuesTheOriginalFileHad() {
+        val dir = Files.createTempDirectory("ue5orig").toFile()
+        val ini = File(dir, "Engine.ini")
+        ini.writeText("[SystemSettings]\nr.ScreenPercentage=75\n")
+        Ue5Ini.applyToFile(ini, cvars)
+        // Simulate the game stripping our markers, then turn the tweaks off.
+        ini.writeText("[SystemSettings]\nr.ScreenPercentage=75\nr.Lumen.TraceMeshSDFs=0\n")
+        Ue5Ini.applyToFile(ini, emptyMap(), cvars)
+        assertEquals("[SystemSettings]\nr.ScreenPercentage=75\n", ini.readText())
+        dir.deleteRecursively()
+    }
+
+    @Test fun readOnlyLockIsAppliedAndReleased() {
+        val dir = Files.createTempDirectory("ue5ro").toFile()
+        val ini = File(dir, "Engine.ini")
+        ini.writeText("[SystemSettings]\nr.Foo=1\n")
+
+        assertTrue(Ue5Ini.applyToFile(ini, cvars, emptyMap(), readOnly = true))
+        assertFalse(Ue5Ini.isOwnerWritable(ini))
+        assertFalse(Ue5Ini.applyToFile(ini, cvars, cvars, readOnly = true)) // nothing to do
+
+        // Changing the preset while locked still works.
+        assertTrue(Ue5Ini.applyToFile(ini, mapOf("r.Nanite" to "0"), cvars, readOnly = true))
+        assertTrue(ini.readText().contains("r.Nanite=0"))
+        assertFalse(Ue5Ini.isOwnerWritable(ini))
+
+        // Unticking the lock, then turning the tweaks off, restores a normal file.
+        assertTrue(Ue5Ini.applyToFile(ini, mapOf("r.Nanite" to "0"), mapOf("r.Nanite" to "0"), readOnly = false))
+        assertTrue(Ue5Ini.isOwnerWritable(ini))
+        Ue5Ini.applyToFile(ini, emptyMap(), mapOf("r.Nanite" to "0"), readOnly = true)
+        assertTrue(Ue5Ini.isOwnerWritable(ini))
+        assertEquals("[SystemSettings]\nr.Foo=1\n", ini.readText())
+        dir.deleteRecursively()
+    }
+
     @Test fun detectsProjectFromWin64AndFromRoot() {
         val root = Files.createTempDirectory("game").toFile()
         val win64 = File(root, "Stalker2/Binaries/Win64").apply { mkdirs() }

@@ -17,11 +17,19 @@ object Ue5Ini {
      * Writes [cvars] as a managed block at the end of [SystemSettings] (UE uses the
      * last assignment of a key, so values placed last win over the game's own).
      * Any previous managed block is replaced. Everything else is kept verbatim.
+     *
+     * [previous] are the cvars written last time. When the game rewrote the file
+     * and dropped our comment markers, those lines are still recognised and removed.
      */
     @JvmStatic
-    fun applyManagedBlock(original: String, cvars: Map<String, String>): String {
+    @JvmOverloads
+    fun applyManagedBlock(
+        original: String,
+        cvars: Map<String, String>,
+        previous: Map<String, String> = emptyMap(),
+    ): String {
         val nl = detectNewline(original)
-        val lines = splitLines(removeManagedBlock(original))
+        val lines = splitLines(removeManagedBlock(original, previous))
         if (cvars.isEmpty()) return joinLines(lines, nl, original)
 
         val block = ArrayList<String>(cvars.size + 2)
@@ -50,22 +58,33 @@ object Ue5Ini {
         return joinLines(result, nl, original, forceTrailingNewline = true)
     }
 
-    /** Removes the managed block (if any) and nothing else. */
+    /**
+     * Removes the managed block (if any) and nothing else. Lines in [SystemSettings]
+     * that match [previous] exactly (our own values whose markers the game dropped
+     * when it rewrote the file) are removed too.
+     */
     @JvmStatic
-    fun removeManagedBlock(original: String): String {
-        if (!original.contains(BEGIN_MARKER)) return original
+    @JvmOverloads
+    fun removeManagedBlock(original: String, previous: Map<String, String> = emptyMap()): String {
+        if (!original.contains(BEGIN_MARKER) && previous.isEmpty()) return original
         val nl = detectNewline(original)
         val lines = splitLines(original)
+        val prev = previous.entries.associate { it.key.lowercase() to it.value.trim() }
         val out = ArrayList<String>(lines.size)
         var inside = false
+        var inSystemSettings = false
         for (line in lines) {
             val t = line.trim()
+            if (isSectionHeader(line)) inSystemSettings = t.equals(SECTION, ignoreCase = true)
             when {
                 t == BEGIN_MARKER -> inside = true
                 t == END_MARKER -> inside = false
-                !inside -> out += line
+                inside -> {}
+                inSystemSettings && isPreviousValue(t, prev) -> {}
+                else -> out += line
             }
         }
+        if (out.size == lines.size) return original
         // Drop a [SystemSettings] section that only existed because of us.
         val idx = out.indexOfFirst { it.trim().equals(SECTION, ignoreCase = true) }
         if (idx >= 0) {
@@ -84,6 +103,33 @@ object Ue5Ini {
 
     @JvmStatic
     fun hasManagedBlock(text: String): Boolean = text.contains(BEGIN_MARKER)
+
+    /** key=value pairs of the [SystemSettings] section(s), keys lower-cased. */
+    @JvmStatic
+    fun systemSettingsPairs(text: String): Map<String, String> {
+        val out = HashMap<String, String>()
+        var inSystemSettings = false
+        for (line in splitLines(text)) {
+            val t = line.trim()
+            if (isSectionHeader(line)) {
+                inSystemSettings = t.equals(SECTION, ignoreCase = true)
+                continue
+            }
+            if (!inSystemSettings) continue
+            val eq = t.indexOf('=')
+            if (eq <= 0 || t.startsWith(";")) continue
+            out[t.substring(0, eq).trim().lowercase()] = t.substring(eq + 1).trim()
+        }
+        return out
+    }
+
+    private fun isPreviousValue(trimmed: String, prev: Map<String, String>): Boolean {
+        if (prev.isEmpty()) return false
+        val eq = trimmed.indexOf('=')
+        if (eq <= 0 || trimmed.startsWith(";")) return false
+        val value = prev[trimmed.substring(0, eq).trim().lowercase()] ?: return false
+        return trimmed.substring(eq + 1).trim() == value
+    }
 
     // ---- file I/O preserving the original encoding (UE writes UTF-8 or UTF-16LE) ----
 
@@ -110,34 +156,81 @@ object Ue5Ini {
     /**
      * Applies (or, with empty [cvars], removes) the managed block in [file].
      * A one-time backup of the untouched original is kept next to it.
-     * Returns true if the file content changed.
+     *
+     * [previous] are the cvars written last time (see [removeManagedBlock]); values
+     * the original file already had are never removed. With [readOnly] the file is
+     * left without write permission so the game cannot rewrite it (Wine reports it
+     * as read-only); otherwise write permission is restored.
+     * Returns true if the file content or its permission changed.
      */
     @JvmStatic
-    fun applyToFile(file: File, cvars: Map<String, String>): Boolean {
+    @JvmOverloads
+    fun applyToFile(
+        file: File,
+        cvars: Map<String, String>,
+        previous: Map<String, String> = emptyMap(),
+        readOnly: Boolean = false,
+    ): Boolean {
+        val backup = File(file.path + BACKUP_SUFFIX)
         val existed = file.isFile
         val decoded = if (existed) decode(file.readBytes()) else null
         val before = decoded?.text ?: ""
-        val after = if (cvars.isEmpty()) removeManagedBlock(before) else applyManagedBlock(before, cvars)
-        if (after == before) return false
-        if (!existed && cvars.isEmpty()) return false
-        // We created this file ourselves and nothing else is left in it: remove it.
-        if (after.isBlank() && !File(file.path + BACKUP_SUFFIX).exists()) {
-            file.delete()
-            return true
+
+        val original = if (backup.isFile) systemSettingsPairs(decode(backup.readBytes()).text) else emptyMap()
+        val ours = previous.filter { (k, v) -> original[k.lowercase()] != v.trim() }
+        val after = if (cvars.isEmpty()) removeManagedBlock(before, ours) else applyManagedBlock(before, cvars, ours)
+
+        var changed = false
+        if (after != before && (existed || cvars.isNotEmpty())) {
+            if (existed) setOwnerWritable(file, true)
+            // We created this file ourselves and nothing else is left in it: remove it.
+            if (after.isBlank() && !backup.exists()) {
+                file.delete()
+                return true
+            }
+            if (existed && !backup.exists() && !hasManagedBlock(before)) file.copyTo(backup)
+            file.parentFile?.mkdirs()
+            val tmp = File(file.path + ".wntmp")
+            tmp.writeBytes(encode(after, decoded))
+            if (!tmp.renameTo(file)) {
+                file.writeBytes(tmp.readBytes())
+                tmp.delete()
+            }
+            changed = true
         }
 
-        if (existed && !hasManagedBlock(before)) {
-            val backup = File(file.path + BACKUP_SUFFIX)
-            if (!backup.exists()) file.copyTo(backup)
+        if (file.isFile) {
+            val wantWritable = !(readOnly && cvars.isNotEmpty())
+            if (isOwnerWritable(file) != wantWritable) {
+                setOwnerWritable(file, wantWritable)
+                changed = true
+            }
         }
-        file.parentFile?.mkdirs()
-        val tmp = File(file.path + ".wntmp")
-        tmp.writeBytes(encode(after, decoded))
-        if (!tmp.renameTo(file)) {
-            file.writeBytes(tmp.readBytes())
-            tmp.delete()
+        return changed
+    }
+
+    /** Owner write bit; independent of who runs the check (root ignores permissions). */
+    @JvmStatic
+    fun isOwnerWritable(file: File): Boolean = try {
+        java.nio.file.Files.getPosixFilePermissions(file.toPath())
+            .contains(java.nio.file.attribute.PosixFilePermission.OWNER_WRITE)
+    } catch (e: Exception) {
+        file.canWrite()
+    }
+
+    private fun setOwnerWritable(file: File, writable: Boolean) {
+        try {
+            val perms = java.nio.file.Files.getPosixFilePermissions(file.toPath()).toMutableSet()
+            val w = listOf(
+                java.nio.file.attribute.PosixFilePermission.OWNER_WRITE,
+                java.nio.file.attribute.PosixFilePermission.GROUP_WRITE,
+                java.nio.file.attribute.PosixFilePermission.OTHERS_WRITE,
+            )
+            if (writable) perms += w[0] else perms.removeAll(w.toSet())
+            java.nio.file.Files.setPosixFilePermissions(file.toPath(), perms)
+        } catch (e: Exception) {
+            file.setWritable(writable, false)
         }
-        return true
     }
 
     // ---- game layout detection ----

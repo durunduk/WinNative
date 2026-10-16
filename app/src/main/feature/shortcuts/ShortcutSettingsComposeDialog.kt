@@ -468,6 +468,7 @@ class ShortcutSettingsComposeDialog private constructor(
         state.ue5Project.value = shortcut.getExtra(Ue5Tweaks.EXTRA_PROJECT, "")
         state.ue5CustomCvars.value = shortcut.getExtra(Ue5Tweaks.EXTRA_CUSTOM_CVARS, "")
         state.ue5UseArgs.value = shortcut.getExtra(Ue5Tweaks.EXTRA_USE_ARGS, "1") == "1"
+        state.ue5LockIni.value = shortcut.getExtra(Ue5Tweaks.EXTRA_LOCK_INI, "0") == "1"
         state.ue5Detected.value = detectUe5Game(shortcut)
         val fullscreenStretched = getShortcutSetting(
             "fullscreenStretched",
@@ -1445,6 +1446,7 @@ class ShortcutSettingsComposeDialog private constructor(
                 .entries.joinToString(",") { "${it.key}=${it.value}" }
             shortcut.putExtra(Ue5Tweaks.EXTRA_CUSTOM_CVARS, ue5Custom.ifEmpty { null })
             shortcut.putExtra(Ue5Tweaks.EXTRA_USE_ARGS, if (state.ue5UseArgs.value) null else "0")
+            shortcut.putExtra(Ue5Tweaks.EXTRA_LOCK_INI, if (state.ue5LockIni.value) "1" else null)
 
             // Refresh rate
             val refreshRateEntries = state.refreshRateEntries.value

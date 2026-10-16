@@ -2997,4 +2997,5 @@ Installed path:
     <string name="ue5_tweaks_custom_cvars">Extra cvars, e.g. r.ScreenPercentage=50, r.Nanite=0</string>
     <string name="ue5_tweaks_use_args">Also pass as launch arguments (-dpcvars)</string>
     <string name="ue5_tweaks_footer">Written to the game\'s Engine.ini in the container before launch and removed when turned off. A backup (.wnbak) of the original file is kept. Details: drive_c/WinNative/ue5-tweaks/last.log</string>
+    <string name="ue5_tweaks_lock_ini">Make Engine.ini read-only (the game cannot overwrite it; turn off if the game stops saving or fails to start)</string>
 </resources>
