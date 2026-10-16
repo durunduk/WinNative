@@ -138,5 +138,7 @@ class Ue5IniTest {
         val custom = Ue5Preset.parseCustom("r.Foo=1, r.Bar 2;bad name=1\nr.Quote=\"x\",r.Empty=")
         assertEquals(mapOf("r.Foo" to "1", "r.Bar" to "2"), custom)
         assertEquals("50", Ue5Preset.resolve(Ue5Preset.PERFORMANCE, "r.ScreenPercentage=50")["r.ScreenPercentage"])
+        assertEquals(mapOf("r.RDG.AsyncCompute" to "0"), Ue5Preset.resolve(Ue5Preset.CUSTOM_ONLY, "r.RDG.AsyncCompute=0"))
+        assertEquals(Ue5Preset.CUSTOM_ONLY, Ue5Preset.fromId("custom"))
     }
 }

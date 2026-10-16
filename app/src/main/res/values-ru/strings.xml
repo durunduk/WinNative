@@ -2882,10 +2882,11 @@
     <string name="ue5_preset_balanced">Сбалансированный: грубее Lumen, отражения SSR, грубее Nanite</string>
     <string name="ue5_preset_performance" formatted="false">Производительность: без динамического GI, разрешение 60%</string>
     <string name="ue5_preset_compat">Совместимость: если Lumen/Nanite рисуются неверно или не видны</string>
-    <string name="ue5_preset_no_nanite">Совместимость без Nanite</string>
+    <string name="ue5_preset_no_nanite">Совместимость без Nanite (запасные меши, FPS может сильно упасть)</string>
     <string name="ue5_tweaks_project">Имя проекта UE (пусто = определить автоматически)</string>
     <string name="ue5_tweaks_custom_cvars">Доп. cvar\'ы, например r.ScreenPercentage=50, r.Nanite=0</string>
     <string name="ue5_tweaks_use_args">Также передавать аргументами запуска (-dpcvars)</string>
     <string name="ue5_tweaks_footer">Перед запуском записывается в Engine.ini игры в контейнере и удаляется при выключении. Копия исходного файла сохраняется (.wnbak). Подробности: drive_c/WinNative/ue5-tweaks/last.log</string>
     <string name="ue5_tweaks_lock_ini">Сделать Engine.ini только для чтения (игра не сможет его перезаписать; выключите, если игра перестала сохранять настройки или запускаться)</string>
+    <string name="ue5_preset_custom">Только свои cvar\'ы (чтобы проверять по одной настройке)</string>
 </resources>

@@ -77,7 +77,14 @@ enum class Ue5Preset(val id: String, val cvars: Map<String, String>) {
         COMPATIBILITY.cvars + linkedMapOf(
             "r.Nanite" to "0",
         )
-    );
+    ),
+
+    /**
+     * No preset cvars at all: only what the user types into the custom field.
+     * Used to find which single cvar fixes or breaks a game. Declared last so
+     * the ordinals of the presets above (used by the settings UI) stay the same.
+     */
+    CUSTOM_ONLY("custom", emptyMap());
 
     companion object {
         @JvmField

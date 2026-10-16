@@ -5740,7 +5740,8 @@ private fun Ue5TweaksGroup(state: GameSettingsStateHolder) {
                 stringResource(R.string.ue5_preset_balanced),
                 stringResource(R.string.ue5_preset_performance),
                 stringResource(R.string.ue5_preset_compat),
-                stringResource(R.string.ue5_preset_no_nanite)
+                stringResource(R.string.ue5_preset_no_nanite),
+                stringResource(R.string.ue5_preset_custom)
             )
             // Labels above must stay in Ue5Preset declaration order.
             SettingDropdown(
