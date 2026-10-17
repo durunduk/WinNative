@@ -634,7 +634,7 @@ class GameSettingsStateHolder {
     )
     val ue5Project = mutableStateOf("")
     val ue5CustomCvars = mutableStateOf("")
-    val ue5UseArgs = mutableStateOf(true)
+    val ue5UseArgs = mutableStateOf(false)
     val ue5LockIni = mutableStateOf(false)
     val ue5Detected = mutableStateOf(false)
 

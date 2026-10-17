@@ -11,7 +11,7 @@ import java.io.File
  *
  * When enabled for a shortcut, the selected preset (plus any custom cvars) is
  *  1. written as a managed block into the game's Engine.ini inside the Wine prefix, and
- *  2. optionally passed on the command line as -dpcvars=...
+ *  2. optionally (off by default) passed as -dpcvars=..., which shipping builds usually ignore
  * Turning the option off removes the managed block again, leaving the game's own
  * settings untouched. State files live in drive_c/WinNative/ue5-tweaks.
  */
@@ -40,12 +40,13 @@ object Ue5Tweaks {
 
     /**
      * Extra command-line arguments for the game exe (with a leading space), or "".
-     * Uses -dpcvars, which shipping builds accept; values never contain commas
+     * -dpcvars is honoured by development builds; shipping builds generally ignore it
+     * (confirmed on Styx: Blades of Greed, UE 5.6). Values never contain commas
      * or quotes because [Ue5Preset.parseCustom] rejects them.
      */
     @JvmStatic
     fun commandLineArgs(shortcut: Shortcut?): String {
-        if (!isEnabled(shortcut) || shortcut!!.getExtra(EXTRA_USE_ARGS, "1") != "1") return ""
+        if (!isEnabled(shortcut) || shortcut!!.getExtra(EXTRA_USE_ARGS, "0") != "1") return ""
         val cvars = resolveCvars(shortcut)
         if (cvars.isEmpty()) return ""
         return " -dpcvars=" + cvars.entries.joinToString(",") { "${it.key}=${it.value}" }
