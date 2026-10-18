@@ -5736,11 +5736,13 @@ private fun Ue5TweaksGroup(state: GameSettingsStateHolder) {
         if (state.ue5Enabled.value) {
             Spacer(Modifier.height(SettingItemGap))
             val presetLabels = listOf(
-                stringResource(R.string.ue5_preset_light),
-                stringResource(R.string.ue5_preset_balanced),
-                stringResource(R.string.ue5_preset_performance),
-                stringResource(R.string.ue5_preset_compat),
-                stringResource(R.string.ue5_preset_no_nanite),
+                stringResource(R.string.ue5_preset_p1),
+                stringResource(R.string.ue5_preset_p2),
+                stringResource(R.string.ue5_preset_p3),
+                stringResource(R.string.ue5_preset_p4),
+                stringResource(R.string.ue5_preset_dbg1),
+                stringResource(R.string.ue5_preset_dbg2),
+                stringResource(R.string.ue5_preset_dbg3),
                 stringResource(R.string.ue5_preset_custom)
             )
             // Labels above must stay in Ue5Preset declaration order.
@@ -5749,6 +5751,13 @@ private fun Ue5TweaksGroup(state: GameSettingsStateHolder) {
                 entries = presetLabels.take(com.winlator.cmod.runtime.compat.ue.Ue5Preset.entries.size),
                 selectedIndex = state.ue5SelectedPreset.intValue,
                 onSelected = { state.ue5SelectedPreset.intValue = it }
+            )
+
+            Spacer(Modifier.height(SettingItemGap))
+            Text(
+                text = stringResource(R.string.ue5_tweaks_artifacts_hint),
+                color = TextSecondary,
+                fontSize = 12.sp
             )
 
             Spacer(Modifier.height(SettingItemGap))

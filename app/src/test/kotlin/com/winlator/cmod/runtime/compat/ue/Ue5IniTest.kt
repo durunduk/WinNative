@@ -132,12 +132,19 @@ class Ue5IniTest {
     }
 
     @Test fun presetsAndCustomCvars() {
-        assertEquals(Ue5Preset.BALANCED, Ue5Preset.fromId("nonsense"))
-        assertEquals(Ue5Preset.NO_NANITE, Ue5Preset.fromId("NO_NANITE"))
-        assertEquals("8", Ue5Preset.PERFORMANCE.cvars["r.Nanite.MaxPixelsPerEdge"])
+        assertEquals(Ue5Preset.P2, Ue5Preset.fromId("nonsense"))
+        assertEquals(Ue5Preset.P3, Ue5Preset.fromId("performance"))
+        assertEquals(Ue5Preset.DBG3, Ue5Preset.fromId("no_nanite"))
+        // Performance presets must never switch shadows or Nanite off.
+        for (p in listOf(Ue5Preset.P1, Ue5Preset.P2, Ue5Preset.P3, Ue5Preset.P4)) {
+            assertEquals(null, p.cvars["r.Shadow.Virtual.Enable"])
+            assertEquals(null, p.cvars["r.Nanite"])
+        }
+        assertEquals(Ue5Preset.DBG3, Ue5Preset.fromId("DBG3"))
+        assertEquals("8", Ue5Preset.P4.cvars["r.Nanite.MaxPixelsPerEdge"])
         val custom = Ue5Preset.parseCustom("r.Foo=1, r.Bar 2;bad name=1\nr.Quote=\"x\",r.Empty=")
         assertEquals(mapOf("r.Foo" to "1", "r.Bar" to "2"), custom)
-        assertEquals("50", Ue5Preset.resolve(Ue5Preset.PERFORMANCE, "r.ScreenPercentage=50")["r.ScreenPercentage"])
+        assertEquals("50", Ue5Preset.resolve(Ue5Preset.P4, "r.ScreenPercentage=50")["r.ScreenPercentage"])
         assertEquals(mapOf("r.RDG.AsyncCompute" to "0"), Ue5Preset.resolve(Ue5Preset.CUSTOM_ONLY, "r.RDG.AsyncCompute=0"))
         assertEquals(Ue5Preset.CUSTOM_ONLY, Ue5Preset.fromId("custom"))
     }

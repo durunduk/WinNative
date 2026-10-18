@@ -7,92 +7,129 @@ package com.winlator.cmod.runtime.compat.ue
  * Engine.ini [SystemSettings] (and from -dpcvars). Cvars flagged as cheats are
  * deliberately avoided because shipping builds ignore them.
  *
- * Presets are ordered from "change as little as possible" to "change a lot".
- * Each later preset builds on the previous one so the behaviour is predictable.
+ * P1..P4 trade quality for FPS, each building on the previous one.
+ * DBG1..DBG3 work around rendering artifacts and may cost FPS.
+ * The settings UI lists presets by ordinal, so keep its labels in this order.
  */
 enum class Ue5Preset(val id: String, val cvars: Map<String, String>) {
 
-    /**
-     * Keeps Lumen and Nanite on but removes the parts that cost the most on Adreno:
-     * per-mesh SDF tracing, async compute (Adreno has no real async queue) and
-     * Virtual Shadow Maps.
-     */
-    LIGHT(
-        "light",
+    // ---- Performance presets P1..P4 -------------------------------------------
+    // Lessons from Styx: Blades of Greed (UE 5.6, Adreno 840): turning Virtual
+    // Shadow Maps or Nanite OFF makes UE5 games much slower (classic shadow maps
+    // and fallback meshes render full-detail geometry; FPS fell from ~40 to 0.1-3).
+    // So the P presets keep both on and only make them cheaper.
+
+    /** Barely visible: softer-shadow ray counts, coarser fog grid, no motion blur. */
+    P1(
+        "p1",
         linkedMapOf(
-            "r.Lumen.AsyncCompute" to "0",
-            "r.Lumen.TraceMeshSDFs" to "0",
             "r.Lumen.HardwareRayTracing" to "0",
-            "r.Shadow.Virtual.Enable" to "0",
-            "r.Shadow.CSM.MaxCascades" to "2",
-        )
-    ),
-
-    /** Lumen GI stays, but coarser; reflections fall back to SSR; Nanite is coarser. */
-    BALANCED(
-        "balanced",
-        LIGHT.cvars + linkedMapOf(
-            "r.Lumen.ScreenProbeGather.DownsampleFactor" to "32",
-            "r.Lumen.ScreenProbeGather.TracingOctahedronResolution" to "4",
-            "r.ReflectionMethod" to "2",
-            "r.Nanite.MaxPixelsPerEdge" to "4",
+            "r.Lumen.TraceMeshSDFs" to "0",
+            "r.Shadow.Virtual.SMRT.RayCountDirectional" to "4",
+            "r.Shadow.Virtual.SMRT.SamplesPerRayDirectional" to "4",
+            "r.Shadow.Virtual.SMRT.RayCountLocal" to "4",
+            "r.Shadow.Virtual.SMRT.SamplesPerRayLocal" to "4",
+            "r.VolumetricFog.GridPixelSize" to "16",
             "r.MotionBlurQuality" to "0",
-            "r.ScreenPercentage" to "75",
         )
     ),
 
-    /** No dynamic GI at all, SSR reflections, very coarse Nanite, lower resolution. */
-    PERFORMANCE(
-        "performance",
-        BALANCED.cvars + linkedMapOf(
-            "r.DynamicGlobalIlluminationMethod" to "0",
-            "r.Nanite.MaxPixelsPerEdge" to "8",
+    /** 75% resolution, coarser Lumen GI, SSR reflections, lower shadow resolution. */
+    P2(
+        "p2",
+        P1.cvars + linkedMapOf(
+            "r.ScreenPercentage" to "75",
+            "r.Lumen.ScreenProbeGather.DownsampleFactor" to "32",
+            "r.ReflectionMethod" to "2",
+            "r.Shadow.Virtual.ResolutionLodBiasDirectional" to "1",
+            "r.Shadow.Virtual.SMRT.RayCountDirectional" to "2",
+            "r.Shadow.Virtual.SMRT.SamplesPerRayDirectional" to "2",
+            "r.Shadow.Virtual.SMRT.RayCountLocal" to "2",
+            "r.Shadow.Virtual.SMRT.SamplesPerRayLocal" to "2",
+            "r.Nanite.MaxPixelsPerEdge" to "2",
+        )
+    ),
+
+    /** 60% resolution, hard shadows, no volumetric fog or depth of field. Lumen stays. */
+    P3(
+        "p3",
+        P2.cvars + linkedMapOf(
+            "r.ScreenPercentage" to "60",
+            "r.Lumen.ScreenProbeGather.TracingOctahedronResolution" to "4",
+            "r.Shadow.Virtual.ResolutionLodBiasDirectional" to "2",
+            "r.Shadow.Virtual.SMRT.RayCountDirectional" to "0",
+            "r.Shadow.Virtual.SMRT.RayCountLocal" to "0",
+            "r.Nanite.MaxPixelsPerEdge" to "4",
             "r.VolumetricFog" to "0",
             "r.DepthOfFieldQuality" to "0",
-            "r.ScreenPercentage" to "60",
         )
     ),
 
-    /**
-     * For games where Lumen/Nanite render garbage or nothing: removes every async
-     * and ray-tracing path and turns dynamic GI off, but leaves Nanite enabled so
-     * the game does not switch to (often very low quality) fallback meshes.
-     */
-    COMPATIBILITY(
-        "compat",
+    /** Maximum FPS: Lumen GI off (lighting changes, interiors get flatter), 50% resolution. */
+    P4(
+        "p4",
+        P3.cvars + linkedMapOf(
+            "r.ScreenPercentage" to "50",
+            "r.DynamicGlobalIlluminationMethod" to "0",
+            "r.Shadow.Virtual.ResolutionLodBiasDirectional" to "3",
+            "r.Nanite.MaxPixelsPerEdge" to "8",
+        )
+    ),
+
+    // ---- Artifact workarounds DBG1..DBG3 (may cost FPS) ------------------------
+    // Rendering garbage is often a translation-layer bug first: e.g. Styx needed
+    // vkd3d-proton 0bb64c56+ and nothing in Engine.ini helped. Try that first.
+
+    /** Serialises async compute and Nanite async rasterization, no HW ray tracing. */
+    DBG1(
+        "dbg1",
         linkedMapOf(
             "r.RDG.AsyncCompute" to "0",
-            "r.Lumen.AsyncCompute" to "0",
-            "r.Lumen.HardwareRayTracing" to "0",
+            "r.Lumen.DiffuseIndirect.AsyncCompute" to "0",
+            "r.Lumen.Reflections.AsyncCompute" to "0",
             "r.Nanite.AsyncRasterization" to "0",
-            "r.Shadow.Virtual.Enable" to "0",
+            "r.Lumen.HardwareRayTracing" to "0",
+        )
+    ),
+
+    /** DBG1 plus Lumen off (GI and reflections): for black, flickering or noisy lighting. */
+    DBG2(
+        "dbg2",
+        DBG1.cvars + linkedMapOf(
             "r.DynamicGlobalIlluminationMethod" to "0",
             "r.ReflectionMethod" to "2",
         )
     ),
 
-    /** Same as COMPATIBILITY, plus Nanite off: the game uses its fallback meshes. */
-    NO_NANITE(
-        "no_nanite",
-        COMPATIBILITY.cvars + linkedMapOf(
+    /** DBG2 plus Nanite off (fallback meshes). Last resort: FPS can drop to single digits. */
+    DBG3(
+        "dbg3",
+        DBG2.cvars + linkedMapOf(
             "r.Nanite" to "0",
         )
     ),
 
-    /**
-     * No preset cvars at all: only what the user types into the custom field.
-     * Used to find which single cvar fixes or breaks a game. Declared last so
-     * the ordinals of the presets above (used by the settings UI) stay the same.
-     */
+    /** No preset cvars at all: only what the user types into the custom field. */
     CUSTOM_ONLY("custom", emptyMap());
 
     companion object {
         @JvmField
-        val DEFAULT: Ue5Preset = BALANCED
+        val DEFAULT: Ue5Preset = P2
+
+        /** Ids stored by earlier versions; their old presets switched shadows/Nanite off. */
+        private val LEGACY_IDS = mapOf(
+            "light" to P1,
+            "balanced" to P2,
+            "performance" to P3,
+            "compat" to DBG1,
+            "no_nanite" to DBG3,
+        )
 
         @JvmStatic
-        fun fromId(id: String?): Ue5Preset =
-            entries.firstOrNull { it.id.equals(id?.trim(), ignoreCase = true) } ?: DEFAULT
+        fun fromId(id: String?): Ue5Preset {
+            val key = id?.trim()?.lowercase() ?: return DEFAULT
+            return entries.firstOrNull { it.id == key } ?: LEGACY_IDS[key] ?: DEFAULT
+        }
 
         @JvmStatic
         fun ids(): List<String> = entries.map { it.id }

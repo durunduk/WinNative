@@ -2878,15 +2878,18 @@
     <string name="ue5_tweaks_enable">Оптимизации UE5</string>
     <string name="ue5_tweaks_detected_hint">Похоже, это игра на Unreal Engine. Оптимизации ниже могут удешевить Lumen и Nanite или обойти проблемы с их отрисовкой.</string>
     <string name="ue5_tweaks_preset">Пресет</string>
-    <string name="ue5_preset_light">Лёгкий: Lumen без SDF мешей, без виртуальных теней</string>
-    <string name="ue5_preset_balanced">Сбалансированный: грубее Lumen, отражения SSR, грубее Nanite</string>
-    <string name="ue5_preset_performance" formatted="false">Производительность: без динамического GI, разрешение 60%</string>
-    <string name="ue5_preset_compat">Совместимость: если Lumen/Nanite рисуются неверно или не видны</string>
-    <string name="ue5_preset_no_nanite">Совместимость без Nanite (запасные меши, FPS может сильно упасть)</string>
     <string name="ue5_tweaks_project">Имя проекта UE (пусто = определить автоматически)</string>
     <string name="ue5_tweaks_custom_cvars">Доп. cvar\'ы, например r.ScreenPercentage=50, r.Nanite=0</string>
     <string name="ue5_tweaks_use_args">Также передавать аргументами запуска (-dpcvars; релизные сборки игр обычно его игнорируют)</string>
     <string name="ue5_tweaks_footer">Перед запуском записывается в Engine.ini игры в контейнере и удаляется при выключении. Копия исходного файла сохраняется (.wnbak). Подробности: drive_c/WinNative/ue5-tweaks/last.log</string>
     <string name="ue5_tweaks_lock_ini">Сделать Engine.ini только для чтения (игра не сможет его перезаписать; выключите, если игра перестала сохранять настройки или запускаться)</string>
+    <string name="ue5_preset_p1">P1: почти без потери качества (лучи теней, туман, без motion blur)</string>
+    <string name="ue5_preset_p2" formatted="false">P2: разрешение 75%, грубее Lumen, отражения SSR</string>
+    <string name="ue5_preset_p3" formatted="false">P3: разрешение 60%, жёсткие тени, без тумана и DOF</string>
+    <string name="ue5_preset_p4" formatted="false">P4: максимум FPS, разрешение 50%, без Lumen GI (меняется освещение)</string>
+    <string name="ue5_preset_dbg1">DBG1: артефакты — без async compute (FPS может немного упасть)</string>
+    <string name="ue5_preset_dbg2">DBG2: артефакты в освещении — DBG1 + без Lumen</string>
+    <string name="ue5_preset_dbg3">DBG3: рассыпается геометрия — DBG2 + без Nanite (FPS может сильно упасть)</string>
+    <string name="ue5_tweaks_artifacts_hint">Если геометрия рассыпается или пропадает на любых настройках, сначала обновите VKD3D (контейнер → DX wrapper, версия 0bb64c56 или новее): причина часто там, а не в игре. Отключение теней или Nanite обычно снижает FPS.</string>
     <string name="ue5_preset_custom">Только свои cvar\'ы (чтобы проверять по одной настройке)</string>
 </resources>

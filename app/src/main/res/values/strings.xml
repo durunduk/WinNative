@@ -2988,15 +2988,18 @@ Installed path:
     <string name="ue5_tweaks_enable">UE5 performance tweaks</string>
     <string name="ue5_tweaks_detected_hint">This looks like an Unreal Engine game. The tweaks below can make Lumen and Nanite cheaper or work around rendering problems.</string>
     <string name="ue5_tweaks_preset">Preset</string>
-    <string name="ue5_preset_light">Light: Lumen without mesh SDFs, no virtual shadow maps</string>
-    <string name="ue5_preset_balanced">Balanced: coarser Lumen, SSR reflections, coarser Nanite</string>
-    <string name="ue5_preset_performance" formatted="false">Performance: no dynamic GI, 60% resolution</string>
-    <string name="ue5_preset_compat">Compatibility: for broken or missing Lumen/Nanite</string>
-    <string name="ue5_preset_no_nanite">Compatibility without Nanite (fallback meshes, FPS can drop sharply)</string>
     <string name="ue5_tweaks_project">UE project name (empty = detect automatically)</string>
     <string name="ue5_tweaks_custom_cvars">Extra cvars, e.g. r.ScreenPercentage=50, r.Nanite=0</string>
     <string name="ue5_tweaks_use_args">Also pass as launch arguments (-dpcvars; most release builds of games ignore it)</string>
     <string name="ue5_tweaks_footer">Written to the game\'s Engine.ini in the container before launch and removed when turned off. A backup (.wnbak) of the original file is kept. Details: drive_c/WinNative/ue5-tweaks/last.log</string>
     <string name="ue5_tweaks_lock_ini">Make Engine.ini read-only (the game cannot overwrite it; turn off if the game stops saving or fails to start)</string>
+    <string name="ue5_preset_p1">P1: almost no quality loss (shadow rays, fog, no motion blur)</string>
+    <string name="ue5_preset_p2" formatted="false">P2: 75% resolution, coarser Lumen, SSR reflections</string>
+    <string name="ue5_preset_p3" formatted="false">P3: 60% resolution, hard shadows, no fog or depth of field</string>
+    <string name="ue5_preset_p4" formatted="false">P4: maximum FPS, 50% resolution, Lumen GI off (lighting changes)</string>
+    <string name="ue5_preset_dbg1">DBG1: artifacts — no async compute (FPS may drop slightly)</string>
+    <string name="ue5_preset_dbg2">DBG2: artifacts in lighting — DBG1 + Lumen off</string>
+    <string name="ue5_preset_dbg3">DBG3: broken geometry — DBG2 + Nanite off (FPS can drop sharply)</string>
+    <string name="ue5_tweaks_artifacts_hint">If geometry is broken or missing at any setting, update VKD3D first (container → DX wrapper, version 0bb64c56 or newer): the cause is often there, not in the game. Turning shadows or Nanite off usually lowers FPS.</string>
     <string name="ue5_preset_custom">Only my cvars (for testing one setting at a time)</string>
 </resources>
